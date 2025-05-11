@@ -28,7 +28,8 @@ export type AgentState = typeof AgentStateAnnotation.State;
 
 // 4. Define tools to get market movers and stock history from the mock server
 const getMarketMovers = tool(
-  async () => {
+  async (args) => {
+    console.log("getMarketMovers called with args:", args);
     const res = await fetch("http://localhost:4000/api/market-movers");
     return await res.json();
   },
@@ -41,6 +42,7 @@ const getMarketMovers = tool(
 
 const getStockHistory = tool(
   async (args) => {
+    console.log("getStockHistory called with args:", args);
     const res = await fetch(
       `http://localhost:4000/api/stock-history?ticker=${args.ticker}`
     );
@@ -55,8 +57,37 @@ const getStockHistory = tool(
   }
 );
 
+// Example: addModule tool with correct zod schema for optional title
+const addModule = tool(
+  async (args) => {
+    // This is a placeholder implementation
+    console.log("addModule called with args:", args);
+    return { success: true };
+  },
+  {
+    name: "addModule",
+    description:
+      "Add a chart module to the dashboard UI. 'type' must be 'lineChart' or 'barChart'. 'data' must be an array of { date: string, price: number }.",
+    schema: z.object({
+      type: z
+        .enum(["lineChart", "barChart"])
+        .describe(
+          "The type of chart to add. Must be 'lineChart' or 'barChart'."
+        ),
+      data: z
+        .array(z.object({ date: z.string(), price: z.number() }))
+        .describe("Array of data points for the chart"),
+      title: z
+        .string()
+        .optional()
+        .nullable()
+        .describe("Title for the chart module"),
+    }),
+  }
+);
+
 // 5. Put our tools into an array
-const tools = [getMarketMovers, getStockHistory];
+const tools = [getMarketMovers, getStockHistory, addModule];
 
 // 6. Define the chat node, which will handle the chat logic
 async function chat_node(state: AgentState, config: RunnableConfig) {
@@ -78,7 +109,6 @@ async function chat_node(state: AgentState, config: RunnableConfig) {
     }.`,
   });
 
-  // 6.4 Invoke the model with the system message and the messages in the state
   const response = await modelWithTools.invoke(
     [systemMessage, ...state.messages],
     config
