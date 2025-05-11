@@ -1,102 +1,56 @@
 # CoAgents Starter
 
-This example contains a simple starter project which includes two different agents, one written in Python and one in JavaScript.
+## Project Overview
 
-**These instructions assume you are in the `coagents-starter/` directory**
+This project is a starter template for building agent-powered dashboards using CopilotKit. It consists of:
 
-## Running the Agent
+- **JavaScript Agent (`agent-js/`)**: A Node.js-based agent that powers the backend logic and connects to CopilotKit.
+- **Next.js UI Dashboard (`ui/`)**: A modern dashboard interface where you can interact with the agent, add/update/remove chart modules, and see results in real time.
+- **Mock Server (`mock-server/`)**: An optional local server to simulate API responses for development and testing.
 
-First, install the backend dependencies:
+---
 
-### Python Agent
+## How to Run Everything Locally
 
-```sh
-cd agent-py
-poetry install
-```
-
-### JS Agent
+### 1. Start the JavaScript Agent
 
 ```sh
 cd agent-js
 pnpm install
-```
-
-Then, create a `.env` file inside `./agent-py` or `./agent-js` with the following:
-
-```
-OPENAI_API_KEY=...
-```
-
-IMPORTANT:
-Make sure the OpenAI API Key you provide, supports gpt-4o.
-
-Then, run the demo:
-
-Python
-
-```sh
-poetry run demo
-```
-
-
-## Running the UI
-
-First, install the dependencies:
-
-```sh
-cd ./ui
-pnpm i
-```
-
-Then start the client:
-
-```sh
+# Add your OpenAI API key to .env
+echo "OPENAI_API_KEY=your-key-here" > .env
 pnpm run dev
 ```
 
-Then, create a `.env` file inside `./ui` with the following:
+### 2. Start the Mock Server (Optional)
 
-```
-OPENAI_API_KEY=...
-```
-
-If you're using the **JS** agent, uncomment the code inside the `app/api/copilotkit/route.ts`, `remoteEndpoints` action: 
-
-```ts
-// Uncomment this if you want to use LangGraph JS, make sure to 
-// remove the remote action url below too.
-//
-// langGraphPlatformEndpoint({
-//   deploymentUrl: "http://localhost:8123",
-//   langsmithApiKey: process.env.LANGSMITH_API_KEY || "", // only used in LangGraph Platform deployments
-//   agents: [{
-//       name: 'sample_agent', 
-//       description: 'A helpful LLM agent.'
-//   }]
-// }),
+```sh
+cd mock-server
+pnpm install
+pnpm run dev
 ```
 
-Make sure to comment out the other remote endpoint as this replaces it.
+- This is only needed if you want to simulate API responses for the dashboard.
 
-**Running the JS Agent:**
-- Run this command to start your LangGraph server `npx @langchain/langgraph-cli dev --host localhost --port 8123`
-- Run this command to connect your Copilot Cloud Tunnel to the LangGraph server `npx copilotkit@latest dev --port 8123`
+### 3. Start the UI Dashboard
 
+```sh
+cd ui
+pnpm install
+pnpm run dev
+```
 
-## Usage
+### 4. Open the Dashboard
 
-Navigate to [http://localhost:3000](http://localhost:3000).
+- Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-# LangGraph Studio
+---
 
-Run LangGraph studio, then load the `./agent` folder into it.
+**Note:**
 
-Make sure to create the `.env` mentioned above first!
+- The `.devcontainer/` and `.codesandbox/` folders are optional and only needed for special development environments (VS Code Dev Containers or CodeSandbox). You do not need them for local development.
+- Make sure your `.env` files are set up with valid API keys for the agent and mock server if required.
 
-# Troubleshooting
+---
 
-A few things to try if you are running into trouble:
-
-1. Make sure there is no other local application server running on the 8000 port.
-2. Under `/agent/greeter/demo.py`, change `0.0.0.0` to `127.0.0.1` or to `localhost`
+That's it! You now have all components running locally and can develop or test your agent-powered dashboard.
