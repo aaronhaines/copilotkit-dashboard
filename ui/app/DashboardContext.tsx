@@ -11,7 +11,12 @@ export interface DashboardModule {
 
 interface DashboardContextType {
   modules: DashboardModule[];
-  addModule: (type: ModuleType, data: any, title?: string) => string;
+  addModule: (
+    type: ModuleType,
+    data: any,
+    title?: string,
+    id?: string
+  ) => string;
   removeModule: (id: string) => void;
   updateModule: (id: string, updates: Partial<DashboardModule>) => void;
 }
@@ -30,10 +35,18 @@ export const useDashboard = () => {
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [modules, setModules] = useState<DashboardModule[]>([]);
 
-  const addModule = (type: ModuleType, data: any, title?: string) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setModules((prev) => [...prev, { id, type, title: title || type, data }]);
-    return id;
+  const addModule = (
+    type: ModuleType,
+    data: any,
+    title?: string,
+    id?: string
+  ) => {
+    const moduleId = id || Math.random().toString(36).substr(2, 9);
+    setModules((prev) => [
+      ...prev,
+      { id: moduleId, type, title: title || type, data },
+    ]);
+    return moduleId;
   };
 
   const removeModule = (id: string) => {
