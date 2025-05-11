@@ -26,11 +26,12 @@ pnpm run dev
 
 ```sh
 cd mock-server
-pnpm install
-pnpm run dev
+npm install
+npm start
 ```
 
 - This is only needed if you want to simulate API responses for the dashboard.
+- The mock server runs on port 4000 by default.
 
 ### 3. Start the UI Dashboard
 
