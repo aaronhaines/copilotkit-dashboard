@@ -5,6 +5,7 @@ import {
   ExperimentalEmptyAdapter,
   langGraphPlatformEndpoint,
 } from "@copilotkit/runtime";
+import * as tools from "./tools";
 
 const serviceAdapter = new ExperimentalEmptyAdapter();
 
@@ -20,6 +21,7 @@ const runtime = new CopilotRuntime({
         {
           name: "sample_agent",
           description: "A helpful LLM agent.",
+          // Only CopilotKit UI tools are registered here
         },
       ],
     }),

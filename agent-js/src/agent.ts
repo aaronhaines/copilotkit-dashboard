@@ -15,33 +15,48 @@ import { ChatOpenAI } from "@langchain/openai";
 // 1. Import necessary helpers for CopilotKit actions
 import { convertActionsToDynamicStructuredTools } from "@copilotkit/sdk-js/langgraph";
 import { CopilotKitStateAnnotation } from "@copilotkit/sdk-js/langgraph";
- 
+
 // 2. Define our agent state, which includes CopilotKit state to
 //    provide actions to the state.
 export const AgentStateAnnotation = Annotation.Root({
-    language: Annotation<"english" | "spanish">,
-    ...CopilotKitStateAnnotation.spec,
+  language: Annotation<"english" | "spanish">,
+  ...CopilotKitStateAnnotation.spec,
 });
 
 // 3. Define the type for our agent state
 export type AgentState = typeof AgentStateAnnotation.State;
 
-// 4. Define a simple tool to get the weather statically
-const getWeather = tool(
-  (args) => {
-    return `The weather for ${args.location} is 70 degrees.`;
+// 4. Define tools to get market movers and stock history from the mock server
+const getMarketMovers = tool(
+  async () => {
+    const res = await fetch("http://localhost:4000/api/market-movers");
+    return await res.json();
   },
   {
-    name: "getWeather",
-    description: "Get the weather for a given location.",
+    name: "getMarketMovers",
+    description: "Get the current market movers (top gainers/losers)",
+    schema: z.object({}),
+  }
+);
+
+const getStockHistory = tool(
+  async (args) => {
+    const res = await fetch(
+      `http://localhost:4000/api/stock-history?ticker=${args.ticker}`
+    );
+    return await res.json();
+  },
+  {
+    name: "getStockHistory",
+    description: "Get historical stock data for a given ticker symbol",
     schema: z.object({
-      location: z.string().describe("The location to get weather for"),
+      ticker: z.string().describe("The ticker symbol to get history for"),
     }),
   }
 );
 
 // 5. Put our tools into an array
-const tools = [getWeather];
+const tools = [getMarketMovers, getStockHistory];
 
 // 6. Define the chat node, which will handle the chat logic
 async function chat_node(state: AgentState, config: RunnableConfig) {
@@ -50,17 +65,17 @@ async function chat_node(state: AgentState, config: RunnableConfig) {
 
   // 6.2 Bind the tools to the model, include CopilotKit actions. This allows
   //     the model to call tools that are defined in CopilotKit by the frontend.
-  const modelWithTools = model.bindTools!(
-    [
-      ...convertActionsToDynamicStructuredTools(state.copilotkit?.actions || []),
-      ...tools,
-    ],
-  );
+  const modelWithTools = model.bindTools!([
+    ...convertActionsToDynamicStructuredTools(state.copilotkit?.actions || []),
+    ...tools,
+  ]);
 
   // 6.3 Define the system message, which will be used to guide the model, in this case
   //     we also add in the language to use from the state.
   const systemMessage = new SystemMessage({
-    content: `You are a helpful assistant. Talk in ${state.language || "english"}.`,
+    content: `You are a helpful assistant. Talk in ${
+      state.language || "english"
+    }.`,
   });
 
   // 6.4 Invoke the model with the system message and the messages in the state
@@ -88,7 +103,7 @@ function shouldContinue({ messages, copilotkit }: AgentState) {
 
     // 7.3 Only route to the tool node if the tool call is not a CopilotKit action
     if (!actions || actions.every((action) => action.name !== toolCallName)) {
-      return "tool_node"
+      return "tool_node";
     }
   }
 
