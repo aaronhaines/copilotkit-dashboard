@@ -1,6 +1,14 @@
 /**
  * This is the main entry point for the agent.
  * It defines the workflow graph, state, tools, nodes and edges.
+ *
+ * To use Azure OpenAI, set the following environment variables:
+ *   AZURE_OPENAI_API_KEY
+ *   AZURE_OPENAI_INSTANCE_NAME
+ *   AZURE_OPENAI_DEPLOYMENT_NAME
+ *   AZURE_OPENAI_API_VERSION (optional, defaults to '2024-02-15-preview')
+ *
+ * If these are not set, the agent will use standard OpenAI with OPENAI_API_KEY.
  */
 
 import { z } from "zod";
@@ -60,10 +68,39 @@ const getStockHistory = tool(
 // 5. Put our tools into an array
 const tools = [getMarketMovers, getStockHistory];
 
+// --- Azure/OpenAI config helper ---
+function getChatOpenAI() {
+  const azureKey = process.env.AZURE_OPENAI_API_KEY;
+  const azureInstance = process.env.AZURE_OPENAI_INSTANCE_NAME;
+  const azureDeployment = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+  const azureApiVersion =
+    process.env.AZURE_OPENAI_API_VERSION || "2024-02-15-preview";
+
+  if (azureKey && azureInstance && azureDeployment) {
+    // Use Azure OpenAI
+    return new ChatOpenAI({
+      azure: true,
+      azureOpenAIApiKey: azureKey,
+      azureOpenAIApiInstanceName: azureInstance,
+      azureOpenAIApiDeploymentName: azureDeployment,
+      azureOpenAIApiVersion: azureApiVersion,
+      temperature: 0,
+      model: "gpt-4o",
+    });
+  } else {
+    // Use standard OpenAI
+    return new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      temperature: 0,
+      model: "gpt-4o",
+    });
+  }
+}
+
 // 6. Define the chat node, which will handle the chat logic
 async function chat_node(state: AgentState, config: RunnableConfig) {
   // 6.1 Define the model, lower temperature for deterministic responses
-  const model = new ChatOpenAI({ temperature: 0, model: "gpt-4o" });
+  const model = getChatOpenAI();
 
   // 6.2 Bind the tools to the model, include CopilotKit actions. This allows
   //     the model to call tools that are defined in CopilotKit by the frontend.
@@ -103,7 +140,10 @@ function shouldContinue({ messages, copilotkit }: AgentState) {
     const toolCallName = lastMessage.tool_calls![0].name;
 
     // 7.3 Only route to the tool node if the tool call is not a CopilotKit action
-    if (!actions || actions.every((action) => action.name !== toolCallName)) {
+    if (
+      !actions ||
+      actions.every((action: any) => action.name !== toolCallName)
+    ) {
       return "tool_node";
     }
   }
